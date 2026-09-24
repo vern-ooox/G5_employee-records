@@ -1,31 +1,33 @@
 <?php
-
 require_once __DIR__ . '/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-	header('Location: index.php');
-	exit();
+    header('Location: index.php');
+    exit();
 }
 
-$name = trim($_POST['name'] ?? '');
-$email = trim($_POST['email'] ?? '');
-$position = trim($_POST['position'] ?? '');
-$salary = $_POST['salary'] ?? '';
+$name     = isset($_POST['name']) ? trim($_POST['name']) : '';
+$email    = isset($_POST['email']) ? trim($_POST['email']) : '';
+$position = isset($_POST['position']) ? trim($_POST['position']) : '';
 
-if ($name === '' || $email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $position === '' || $salary === '' || !is_numeric($salary) || (float)$salary < 0) {
-	header('Location: index.php?error=Please%20complete%20all%20employee%20fields.');
-	exit();
+if ($name === '' || $email === '' || $position === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    header('Location: index.php?status=invalid');
+    exit();
 }
 
-$stmt = mysqli_prepare($conn, 'INSERT INTO employees (name, email, position, salary) VALUES (?, ?, ?, ?)');
-if (!$stmt) {
-	header('Location: index.php?error=Unable%20to%20save%20the%20employee.');
-	exit();
+$status = 'error';
+
+try {
+    $stmt = mysqli_prepare($conn, 'INSERT INTO employees (name, email, position) VALUES (?, ?, ?)');
+    mysqli_stmt_bind_param($stmt, 'sss', $name, $email, $position);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+    $status = 'added';
+} catch (mysqli_sql_exception $ex) {
+    // 1062 = duplicate entry (email is UNIQUE)
+    $status = ($ex->getCode() === 1062) ? 'duplicate' : 'error';
 }
-mysqli_stmt_bind_param($stmt, 'sssd', $name, $email, $position, $salary);
-$saved = mysqli_stmt_execute($stmt);
-mysqli_stmt_close($stmt);
+
 mysqli_close($conn);
-
-header('Location: ' . ($saved ? 'index.php' : 'index.php?error=Unable%20to%20save%20the%20employee.'));
+header('Location: index.php?status=' . $status);
 exit();
