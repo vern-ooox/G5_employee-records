@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
 
-/* ---------- Read filters from the URL ---------- */
 $search   = isset($_GET['q']) ? trim($_GET['q']) : '';
 $position = isset($_GET['position']) ? trim($_GET['position']) : '';
 $sort     = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
@@ -16,7 +15,6 @@ if (!isset($sortOptions[$sort])) {
     $sort = 'newest';
 }
 
-/* ---------- Build the employee query ---------- */
 $sql    = 'SELECT id, name, email, position FROM employees';
 $where  = [];
 $types  = '';
@@ -52,7 +50,6 @@ if ($stmt) {
     mysqli_stmt_close($stmt);
 }
 
-/* ---------- Positions for the filter dropdown ---------- */
 $positions = [];
 $posResult = mysqli_query($conn, 'SELECT DISTINCT position FROM employees ORDER BY position ASC');
 if ($posResult) {
@@ -61,7 +58,6 @@ if ($posResult) {
     }
 }
 
-/* ---------- Optional status message (?status=added, etc.) ---------- */
 $statusMessages = [
     'added'     => ['success', 'Employee added.'],
     'updated'   => ['success', 'Employee updated.'],
@@ -76,6 +72,7 @@ function e($value)
 {
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
